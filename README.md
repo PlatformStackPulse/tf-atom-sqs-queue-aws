@@ -3,9 +3,32 @@
 [![CI](https://github.com/PlatformStackPulse/tf-atom-sqs-queue-aws/actions/workflows/ci.yml/badge.svg)](https://github.com/PlatformStackPulse/tf-atom-sqs-queue-aws/actions/workflows/ci.yml)
 ![Terraform](https://img.shields.io/badge/terraform-%3E%3D1.6.0-blueviolet)
 
-## Purpose
+Terraform atom that provisions a single AWS SQS queue with tf-label naming and tagging.
 
-Terraform atom: AWS SQS Queue - creates a message queue.
+## Features
+
+- Creates one `aws_sqs_queue` named and tagged from the [tf-label](https://github.com/PlatformStackPulse/tf-label) context (`namespace`, `stage`, `name`, ...).
+- Standard or FIFO queues — set `fifo_queue = true` to append the required `.fifo` suffix automatically.
+- Tunable delivery behaviour: `visibility_timeout_seconds`, `message_retention_seconds`, `delay_seconds`, `max_message_size`, `receive_wait_time_seconds`.
+- Encryption at rest: SSE-SQS by default, or supply `kms_master_key_id` for SSE-KMS.
+- Dead-letter routing via an optional JSON `redrive_policy`.
+- Fully toggleable — `enabled = false` (via the tf-label context) creates no resources.
+
+## Usage
+
+```hcl
+module "sqs_queue" {
+  source = "git::https://github.com/PlatformStackPulse/tf-atom-sqs-queue-aws.git?ref=v1.0.0"
+
+  namespace = "eg"
+  stage     = "prod"
+  name      = "orders"
+
+  fifo_queue                 = false
+  visibility_timeout_seconds = 30
+  message_retention_seconds  = 345600
+}
+```
 
 ## Module Documentation
 
@@ -75,3 +98,14 @@ Terraform atom: AWS SQS Queue - creates a message queue.
 | <a name="output_name"></a> [name](#output\_name) | Name of the SQS queue |
 | <a name="output_url"></a> [url](#output\_url) | URL of the SQS queue |
 <!-- END_TF_DOCS -->
+
+## Tests
+
+Plan-only unit tests run against a mock AWS provider (no real AWS credentials or resources required):
+
+```bash
+terraform init -backend=false
+terraform test -test-directory=tests/unit    # or: make test-unit
+```
+
+The unit tests live in `tests/unit/` and assert queue naming (standard and FIFO), the `enabled` toggle, and that no resources are created when `enabled = false`.
